@@ -1,10 +1,17 @@
 [general]
-name=Minimal
-description=Minimal plugin
-about=About this minimal plugin
-version=1.0
-qgisMinimumVersion=3.0
-author=Martin Dobias
-email=wonder.sk@gmail.com
-repository=URL to the code repository
+name=Ohsome OSM Downloader
+qgisMinimumVersion=3.22
+qgisMaximumVersion=4.99
+description=Extract OSM data via the ohsome API v2 into QGIS layers
+about=This plugin lets you extract OpenStreetMap data snapshots and time series using the ohsome API (https://api.ohsome.org), directly into QGIS vector layers. Define an extent, an ohsome filter, and a time range to fetch geometries, bounding boxes, or centroids.
+version=0.1.0
+author=GIScience Heidelberg
+email=ohsome@heigit.org
+repository=https://github.com/GIScience/ohsome-qgis-plugin
 supportsQt6=True
+tags=osm,openstreetmap,ohsome,heigit,data extraction
+experimental=True
+deprecated=False
+server=False
+icon=img/icon.png
+hasProcessingProvider=False
