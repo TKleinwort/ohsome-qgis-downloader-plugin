@@ -4,12 +4,11 @@ from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtNetwork import QNetworkRequest
 from qgis.core import (
     QgsVectorLayer,
-    QgsProject,
     QgsBlockingNetworkRequest,
     QgsMemoryProviderUtils
 )
 import os
-from qgis.core import QgsVectorLayer, QgsVectorFileWriter, QgsCoordinateTransformContext
+from qgis.core import QgsVectorLayer
 
 class OhsomeDownloadManager:
     """"""
@@ -85,6 +84,11 @@ class OhsomeDownloadManager:
             if not src_layer.isValid():
                 raise RuntimeError("Could not read GeoParquet response.")
 
+            for f in src_layer.fields():
+                print(f.name(), f.typeName(), f.type())
+            feat = next(src_layer.getFeatures())
+            print(type(feat["tags"]), repr(feat["tags"])[:200])
+
             mem_layer = QgsMemoryProviderUtils.createMemoryLayer(
                 layer_name,
                 src_layer.fields(),
@@ -103,25 +107,3 @@ class OhsomeDownloadManager:
             gdal.Unlink(vsi_path)
 
         return mem_layer
-
-
-if __name__ in ("__main__", "__console__"):
-    try:
-        manager = OhsomeDownloadManager()
-
-        body = manager.build_request_body(
-            aoi=[12.52, 55.67, 12.56, 55.69],
-            ohsome_filter="((cycleway=* and cycleway!=no)  or (cycleway:both=* and cycleway:both!=no) or (cycleway:right=* and cycleway:right!=no) or (cycleway:left=* and cycleway:left!=no) or (cycleway:right:lane=* and cycleway:right:lane!=no) or (cycleway:both:lane=* and cycleway:both:lane!=no) or (cycleway:left:lane=* and cycleway:left:lane!=no) or (cycleway:left:oneway=* and cycleway:left:oneway!=no) or (cycleway:right:oneway=* and cycleway:right:oneway!=no) or (highway=cycleway) or (highway=path and bicycle=designated) or (bicycle_road=yes) or (cyclestreet=yes)) and geometry:line",
-            time="latest",
-            clip=True,
-        )
-        print("Request body:", body)
-
-        data = manager.fetch_parquet_bytes(body, api_key="")
-        print(f"Received {len(data)} bytes")
-
-        layer = manager.parquet_bytes_to_layer(data, "ohsome_test")
-
-        QgsProject.instance().addMapLayer(layer)
-    except Exception as exc:
-        print("FEHLER:", exc)
