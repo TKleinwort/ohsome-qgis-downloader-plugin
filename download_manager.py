@@ -2,7 +2,7 @@ import json
 
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtNetwork import QNetworkRequest
-from qgis.core import QgsVectorLayer, QgsBlockingNetworkRequest, QgsMemoryProviderUtils
+from qgis.core import QgsVectorLayer, QgsBlockingNetworkRequest
 
 
 class OhsomeDownloadManager:
@@ -32,7 +32,8 @@ class OhsomeDownloadManager:
         return body
 
     def fetch_parquet_bytes(self, body: dict, api_key: str | None = None) -> bytes:
-        """"""
+        """Call the ohsome extraction endpoint and return the raw
+        GeoParquet response bytes"""
         url = f"{self.base_url}/{self.EXTRACTION_ENDPOINT}"
 
         request = QNetworkRequest(QUrl(url))
@@ -63,7 +64,7 @@ class OhsomeDownloadManager:
         return bytes(reply.content())
 
     def parquet_bytes_to_layer(self, data: bytes, layer_name: str) -> QgsVectorLayer:
-        """Reads byte data from driver and creates memory layers in qgis."""
+        """Load GeoParquet bytes into an OGR-backed QgsVectorLayer via /vsimem/."""
         from osgeo import gdal
 
         if gdal.GetDriverByName("Parquet") is None:
@@ -73,32 +74,10 @@ class OhsomeDownloadManager:
         vsi_path = f"/vsimem/ohsome_extraction_{self._request_counter}.parquet"
         gdal.FileFromMemBuffer(vsi_path, data)
 
-        src_layer = None
-        try:
-            src_layer = QgsVectorLayer(vsi_path, layer_name, "ogr")
-            if not src_layer.isValid():
-                raise RuntimeError("Could not read GeoParquet response.")
-
-            for f in src_layer.fields():
-                print(f.name(), f.typeName(), f.type())
-            feat = next(src_layer.getFeatures())
-            print(type(feat["tags"]), repr(feat["tags"])[:200])
-
-            mem_layer = QgsMemoryProviderUtils.createMemoryLayer(
-                layer_name,
-                src_layer.fields(),
-                src_layer.wkbType(),
-                src_layer.crs(),
-            )
-            if not mem_layer.isValid():
-                raise RuntimeError("Could not create temporary layer.")
-
-            ok, _ = mem_layer.dataProvider().addFeatures(list(src_layer.getFeatures()))
-            if not ok:
-                raise RuntimeError("Could not copy features to temporary layer.")
-            mem_layer.updateExtents()
-        finally:
-            src_layer = None
+        layer = QgsVectorLayer(vsi_path, layer_name, "ogr")
+        if not layer.isValid():
             gdal.Unlink(vsi_path)
+            raise RuntimeError("Could not read GeoParquet response.")
 
-        return mem_layer
+        layer.willBeDeleted.connect(lambda p=vsi_path: gdal.Unlink(p))
+        return layer
