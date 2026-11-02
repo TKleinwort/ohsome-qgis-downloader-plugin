@@ -3,6 +3,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from .ohsome_dialog import OhsomeDialog
 
+
 class OhsomePlugin:
     def __init__(self, iface):
         self.iface = iface

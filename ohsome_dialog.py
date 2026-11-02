@@ -3,8 +3,10 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog
 from qgis.PyQt.QtGui import QPixmap
 from qgis.core import (
-    QgsCoordinateReferenceSystem, QgsCoordinateTransform,
-    QgsProject, QgsSettings,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsProject,
+    QgsSettings,
 )
 from .download_manager import OhsomeDownloadManager
 
@@ -60,6 +62,8 @@ class OhsomeDialog(QDialog, FORM_CLASS):
             data = self.manager.fetch_parquet_bytes(body, api_key=api_key)
             layer = self.manager.parquet_bytes_to_layer(data, "ohsome_buildings")
             QgsProject.instance().addMapLayer(layer)
-            self.iface.messageBar().pushSuccess("ohsome", f"{layer.featureCount()} Features geladen")
+            self.iface.messageBar().pushSuccess(
+                "ohsome", f"{layer.featureCount()} Features geladen"
+            )
         except Exception as exc:
             self.iface.messageBar().pushCritical("ohsome", str(exc))
